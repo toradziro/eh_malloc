@@ -2,8 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef unsigned char uc;
-#define trace cout << "Line: " << __LINE__ << endl; 
+typedef unsigned char byte;
 
 typedef struct SBlockFooter
 {
@@ -51,19 +50,19 @@ void initHeap(void *buf, size_t size)
     globalHeap.m_firstBlock->m_isFree = true;
         
     // here goes footer
-    globalHeap.m_lastFooter = (BlockFooter*)((uc*)(globalHeap.m_buffer) + (size - sizeof(BlockFooter)));
+    globalHeap.m_lastFooter = (BlockFooter*)((byte*)(globalHeap.m_buffer) + (size - sizeof(BlockFooter)));
     globalHeap.m_lastFooter->m_blockSize = globalHeap.m_freeSpace;
     globalHeap.m_lastFooter->m_isFree = true;
 }
 
 inline void* blockHeaderShift(void* start)
 {
-    return (uc*)(start) + sizeof(BlockHeader);
+    return (byte*)(start) + sizeof(BlockHeader);
 }
 
 inline void* blockFooterShift(void* start)
 {
-    return (uc*)(start) + sizeof(BlockFooter);
+    return (byte*)(start) + sizeof(BlockFooter);
 }
 
 inline size_t transformToSizeWithTags(size_t size)
@@ -73,12 +72,12 @@ inline size_t transformToSizeWithTags(size_t size)
 
 inline BlockHeader* getHeader(BlockFooter* footer)
 {
-    return (BlockHeader*)((uc*)(footer) - (footer->m_blockSize + headerSize));
+    return (BlockHeader*)((byte*)(footer) - (footer->m_blockSize + headerSize));
 }
 
 inline BlockFooter* getFooter(BlockHeader* header)
 {
-    return (BlockFooter*)((uc*)(header) + (header->m_blockSize + headerSize));
+    return (BlockFooter*)((byte*)(header) + (header->m_blockSize + headerSize));
 }
 
 inline BlockHeader* getNextBlock(BlockHeader* header)
@@ -87,7 +86,7 @@ inline BlockHeader* getNextBlock(BlockHeader* header)
     {
         return NULL;
     }
-    return (BlockHeader*)((uc*)(getFooter(header)) + footerSize);
+    return (BlockHeader*)((byte*)(getFooter(header)) + footerSize);
 }
 
 void setupBTagsAllocator(void *buf, size_t size)
@@ -134,28 +133,28 @@ void defragmentationAlgorithm(BlockHeader* iterator)
     BlockFooter* currFooter = getFooter(iterator);
     while(iterator != globalHeap.m_firstBlock)
     {
-        BlockFooter* prevFooter = (BlockFooter*)((uc*)iterator - headerSize);
+        BlockFooter* prevFooter = (BlockFooter*)((byte*)iterator - headerSize);
         if(!prevFooter->m_isFree)
         {
             break;
         }
 
         iterator = getHeader(prevFooter);
-        iterator->m_blockSize = ((uc*)currFooter - (uc*)iterator) - headerSize;
+        iterator->m_blockSize = ((byte*)currFooter - (byte*)iterator) - headerSize;
         currFooter->m_blockSize = iterator->m_blockSize;
     }
 
     // join all ahead blocks
     while(currFooter != globalHeap.m_lastFooter)
     {
-        BlockHeader* nextHeader = (BlockHeader*)((uc*)currFooter + footerSize);
+        BlockHeader* nextHeader = (BlockHeader*)((byte*)currFooter + footerSize);
         if(!nextHeader->m_isFree)
         {
             break;
         }
 
         currFooter = getFooter(nextHeader);
-        currFooter->m_blockSize = ((uc*)currFooter - (uc*)iterator) - headerSize;
+        currFooter->m_blockSize = ((byte*)currFooter - (byte*)iterator) - headerSize;
         iterator->m_blockSize = currFooter->m_blockSize;
     }
 }
@@ -176,7 +175,7 @@ void* myalloc(size_t size)
         {
             // prepare block for allocation, at least we have to mark it as used
             cutTheBlockToFit(blockItepator, size);
-            return (void*)((uc*)(blockItepator) + sizeof(BlockHeader));
+            return (void*)((byte*)(blockItepator) + sizeof(BlockHeader));
         }
         blockItepator = getNextBlock(blockItepator);
     }
@@ -186,9 +185,9 @@ void* myalloc(size_t size)
 // Free function
 void myfree(void* p)
 {
-    BlockHeader* header = (BlockHeader*)((uc*)(p) - sizeof(BlockHeader));
+    BlockHeader* header = (BlockHeader*)((byte*)(p) - sizeof(BlockHeader));
     header->m_isFree = true;
-    BlockFooter* footer = (BlockFooter*)((uc*)(p) + header->m_blockSize);
+    BlockFooter* footer = (BlockFooter*)((byte*)(p) + header->m_blockSize);
     footer->m_isFree = true;
     defragmentationAlgorithm(header);
 }
