@@ -189,7 +189,7 @@ void* getFreeBlockFromPartlyFullSlab(Cache *cache)
 }
 
 // Allocates memory (return >= object_size) from cache
-void *cache_alloc(Cache* cache)
+void* cache_alloc(Cache* cache)
 {
     if(cache->m_partlyFullSlabs != NULL)
     {
@@ -211,7 +211,7 @@ void *cache_alloc(Cache* cache)
 // Returns memory back in cache
 void cache_free(Cache* cache, void *ptr)
 {
-    CSlabData* currentSlab = (CSlabData*)((size_t)ptr & ~((1UL << cache->slab_order) * 4096 - 1));
+    CSlabData* currentSlab = (CSlabData*)((size_t)ptr & ~((1UL << cache->slab_order) * sizeOfPage - 1));
     ++currentSlab->m_freeBlocksCount;
     if(currentSlab->m_freeBlocksCount == 1)
     {

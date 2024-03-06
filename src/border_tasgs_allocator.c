@@ -1,20 +1,7 @@
 #include <border_tags_allocator.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 typedef unsigned char byte;
-
-typedef struct SBlockFooter
-{
-    int     m_blockSize;
-    bool    m_isFree;
-} BlockFooter;
-
-typedef struct SBlockHeader
-{
-    int     m_blockSize;
-    bool    m_isFree;
-} BlockHeader;
 
 const size_t headerFooterSize = sizeof(BlockFooter) + sizeof(BlockHeader);
 const size_t headerSize = sizeof(BlockHeader);
@@ -26,16 +13,7 @@ inline int64_t getAvailableSpaceWithoutMarkers(size_t size)
     return size - headerFooterSize;
 }
 
-typedef struct SHeap
-{
-    void*           m_buffer;
-    BlockHeader*    m_firstBlock;
-    BlockFooter*    m_lastFooter;
-    int             m_bufferSize;
-    int             m_freeSpace;
-} Heap;
-
-Heap globalHeap = { NULL, NULL, 0, 0 };
+BTagsHeap globalHeap = { NULL, NULL, 0, 0 };
 
 void initHeap(void *buf, size_t size)
 {
