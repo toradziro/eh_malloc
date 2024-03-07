@@ -15,13 +15,15 @@ typedef struct SBTagHeapsList
 typedef struct SGlobalHeap
 {
     //-- Small cache objects - till 64 bytes
-    Cache m_cacheSmall;
+    Cache           m_cacheSmall;
     //-- Middle cache objects - from 64 till 512 bytes
-    Cache m_cacheMedium;
+    Cache           m_cacheMedium;
     //-- Big objects - 4096 - from 512 to 4096
-    Cache m_cacheBig;
+    Cache           m_cacheBig;
     //-- Large objects - over 4096
-    BTagHeapsList* m_btHeaps;
+    BTagHeapsList*  m_btHeaps;
+
+    bool            m_onInit;
 } GlobalHeap;
 
 void* eh_malloc(size_t size);
