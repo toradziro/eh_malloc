@@ -21,9 +21,9 @@ static int countSlabs(Cache* cache, SlabState stateToCount);
 
 //-- Cache API goes here
 //-- Set up cache for forward usages
-void cache_setup(Cache* cache, size_t object_size)
+void cacheSetup(Cache* cache, size_t object_size)
 {
-    cache->object_size = object_size;
+    cache->m_objectSize = object_size;
     cache->m_freeSlabs = NULL;
     cache->m_fullSlabs = NULL;
     cache->m_partlyFullSlabs = NULL;
@@ -34,16 +34,16 @@ void cache_setup(Cache* cache, size_t object_size)
         int currentOrderToPageSize = (1UL << i) * sizeOfPage;
         if((minimumSlabSizeAcceptable <= currentOrderToPageSize) || i == maxPossibleOrder)
         {
-            cache->slab_order = i;
-            cache->slabSize = currentOrderToPageSize;
-            cache->slab_objects = countPossibleCountOfObjectsInSlab(currentOrderToPageSize, cache->object_size);
+            cache->m_slabOrder = i;
+            cache->m_slabSize = currentOrderToPageSize;
+            cache->m_slabObjects = countPossibleCountOfObjectsInSlab(currentOrderToPageSize, cache->m_objectSize);
             return;
         }
     }
 }
 
 //-- Allocates memory (return >= object_size) from cache
-void* cache_alloc(Cache* cache)
+void* cacheAlloc(Cache* cache)
 {
     if(cache->m_partlyFullSlabs != NULL)
     {
@@ -63,16 +63,16 @@ void* cache_alloc(Cache* cache)
 }
 
 //-- Returns memory back in cache
-void cache_free(Cache* cache, void *ptr)
+void cacheFree(Cache* cache, void *ptr)
 {
-    CSlabData* currentSlab = (CSlabData*)((size_t)ptr & ~((1UL << cache->slab_order) * sizeOfPage - 1));
+    CSlabData* currentSlab = (CSlabData*)((size_t)ptr & ~((1UL << cache->m_slabOrder) * sizeOfPage - 1));
     ++currentSlab->m_freeBlocksCount;
     if(currentSlab->m_freeBlocksCount == 1)
     {
         currentSlab->m_state = SS_PartlyFull;
         moveSlab(cache, currentSlab, SS_PartlyFull, SS_Full);
     }
-    if(currentSlab->m_freeBlocksCount == cache->slab_objects)
+    if(currentSlab->m_freeBlocksCount == cache->m_slabObjects)
     {
         currentSlab->m_state = SS_Free;
         moveSlab(cache, currentSlab, SS_Free, SS_PartlyFull);
@@ -85,7 +85,7 @@ void cache_free(Cache* cache, void *ptr)
 }
 
 //-- Return all memory from cache to system
-void cache_release(Cache* cache)
+void cacheRelease(Cache* cache)
 {
     letTheSlabGo(cache, SS_Free);
     letTheSlabGo(cache, SS_Full);
@@ -93,9 +93,37 @@ void cache_release(Cache* cache)
 }
 
 //-- Function returns all free slabs to system
-void cache_shrink(Cache* cache)
+void cacheShrink(Cache* cache)
 {
     letTheSlabGo(cache, SS_Free);
+}
+
+bool hasAddressInSlab(void* address, CSlabData* iterator, int slabSize)
+{
+    while(iterator->m_next != NULL)
+    {
+        if(iterator <= address || (byte*)(iterator) + slabSize >= address)
+        {
+            return true;
+        }
+        iterator = iterator->m_next;
+    }
+    return false;
+}
+
+bool hasAddressInCache(void* address, Cache* cache)
+{
+    CSlabData* iterator = cache->m_fullSlabs;
+    if(hasAddressInSlab(address, iterator, cache->m_slabSize))
+    {
+        return true;
+    }
+    iterator = cache->m_partlyFullSlabs;
+    if(hasAddressInSlab(address, iterator, cache->m_slabSize))
+    {
+        return true;
+    }
+    return false;
 }
 
 //-- Utilites and conf data
@@ -139,13 +167,13 @@ static void freeSlab(void* slab, int order)
 static void initNewFreeSlab(Cache* cache)
 {
     //-- allocate slab
-    void* buffer = allocSlab(cache->slab_order);
+    void* buffer = allocSlab(cache->m_slabOrder);
     CSlabData* freeSlab = (CSlabData*)buffer;
     
     //-- initialize slab itself
     freeSlab->m_next = NULL;
     freeSlab->m_prev = NULL;
-    freeSlab->m_freeBlocksCount = cache->slab_objects;
+    freeSlab->m_freeBlocksCount = cache->m_slabObjects;
     freeSlab->m_state = SS_Free;
 
     cache->m_freeSlabs = freeSlab;
@@ -246,7 +274,7 @@ static void* getFreeBlockFromPartlyFullSlab(Cache *cache)
 {
     CSlabData* currentSlab = cache->m_partlyFullSlabs;
 
-    void* retPointer = (void*)((byte*)(currentSlab) + sizeof(CSlabData) + ((cache->slab_objects - currentSlab->m_freeBlocksCount) * cache->object_size));
+    void* retPointer = (void*)((byte*)(currentSlab) + sizeof(CSlabData) + ((cache->m_slabObjects - currentSlab->m_freeBlocksCount) * cache->m_objectSize));
     --currentSlab->m_freeBlocksCount;
 
     if(currentSlab->m_freeBlocksCount == 0)
@@ -266,7 +294,7 @@ static void letTheSlabGo(Cache* cache, SlabState stateToFree)
     while(iterator)
     {
         next = iterator->m_next;
-        freeSlab((void*)(iterator), cache->slab_order);
+        freeSlab((void*)(iterator), cache->m_slabOrder);
         iterator = next;
     }
     

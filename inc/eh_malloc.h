@@ -8,8 +8,8 @@
 
 typedef struct SBTagHeapsList
 {
-    BTagsHeap*     m_heap;
-    BTagHeapsList* m_next;
+    BTagsHeap               m_heap;
+    struct SBTagHeapsList*  m_next;
 } BTagHeapsList;
 
 typedef struct SGlobalHeap
@@ -27,3 +27,4 @@ typedef struct SGlobalHeap
 } GlobalHeap;
 
 void* eh_malloc(size_t size);
+void eh_free(void* address);
