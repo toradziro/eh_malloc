@@ -13,24 +13,22 @@ inline int64_t getAvailableSpaceWithoutMarkers(size_t size)
     return size - headerFooterSize;
 }
 
-BTagsHeap globalHeap = { NULL, NULL, 0, 0 };
-
-void initHeap(void *buf, size_t size)
+void initHeap(void *buf, size_t size, BTagsHeap* heap)
 {
-    globalHeap.m_buffer = buf;
-    globalHeap.m_bufferSize = size;
-    globalHeap.m_freeSpace = getAvailableSpaceWithoutMarkers(size);
+    heap->m_buffer = buf;
+    heap->m_bufferSize = size;
+    heap->m_freeSpace = getAvailableSpaceWithoutMarkers(size);
 
     // initialize first header and footer which we will use to cut blocks from
     // here header goes
-    globalHeap.m_firstBlock = (BlockHeader*)globalHeap.m_buffer;
-    globalHeap.m_firstBlock->m_blockSize = globalHeap.m_freeSpace;
-    globalHeap.m_firstBlock->m_isFree = true;
+    heap->m_firstBlock = (BlockHeader*)heap->m_buffer;
+    heap->m_firstBlock->m_blockSize = heap->m_freeSpace;
+    heap->m_firstBlock->m_isFree = true;
         
     // here goes footer
-    globalHeap.m_lastFooter = (BlockFooter*)((byte*)(globalHeap.m_buffer) + (size - sizeof(BlockFooter)));
-    globalHeap.m_lastFooter->m_blockSize = globalHeap.m_freeSpace;
-    globalHeap.m_lastFooter->m_isFree = true;
+    heap->m_lastFooter = (BlockFooter*)((byte*)(heap->m_buffer) + (size - sizeof(BlockFooter)));
+    heap->m_lastFooter->m_blockSize = heap->m_freeSpace;
+    heap->m_lastFooter->m_isFree = true;
 }
 
 inline void* blockHeaderShift(void* start)
@@ -58,18 +56,18 @@ inline BlockFooter* getFooter(BlockHeader* header)
     return (BlockFooter*)((byte*)(header) + (header->m_blockSize + headerSize));
 }
 
-inline BlockHeader* getNextBlock(BlockHeader* header)
+inline BlockHeader* getNextBlock(BlockHeader* header, BTagsHeap* heap)
 {
-    if(getFooter(header) == globalHeap.m_lastFooter)
+    if(getFooter(header) == heap->m_lastFooter)
     {
         return NULL;
     }
     return (BlockHeader*)((byte*)(getFooter(header)) + footerSize);
 }
 
-void setupBTagsAllocator(void *buf, size_t size)
+void setupBTagsAllocator(void *buf, size_t size, BTagsHeap* heap)
 {
-    initHeap(buf, size);
+    initHeap(buf, size, heap);
 }
 
 // Preparing block for return, if it's too big, we will cut part of it to return
@@ -105,11 +103,11 @@ void cutTheBlockToFit(BlockHeader* iterator, size_t requestedSize)
     currentFooter->m_blockSize = newBlockSize;
 }
 
-void defragmentationAlgorithm(BlockHeader* iterator)
+void defragmentationAlgorithm(BlockHeader* iterator, BTagsHeap* heap)
 {
     // join all previous blocks
     BlockFooter* currFooter = getFooter(iterator);
-    while(iterator != globalHeap.m_firstBlock)
+    while(iterator != heap->m_firstBlock)
     {
         BlockFooter* prevFooter = (BlockFooter*)((byte*)iterator - headerSize);
         if(!prevFooter->m_isFree)
@@ -123,7 +121,7 @@ void defragmentationAlgorithm(BlockHeader* iterator)
     }
 
     // join all ahead blocks
-    while(currFooter != globalHeap.m_lastFooter)
+    while(currFooter != heap->m_lastFooter)
     {
         BlockHeader* nextHeader = (BlockHeader*)((byte*)currFooter + footerSize);
         if(!nextHeader->m_isFree)
@@ -138,14 +136,14 @@ void defragmentationAlgorithm(BlockHeader* iterator)
 }
 
 // Allocation function
-void* myalloc(size_t size)
+void* BTAlloc(size_t size, BTagsHeap* heap)
 {
-    if(globalHeap.m_freeSpace < size)
+    if(heap->m_freeSpace < size)
     {
         return NULL;
     }
     
-    BlockHeader* blockItepator = globalHeap.m_firstBlock;
+    BlockHeader* blockItepator = heap->m_firstBlock;
 
     while(blockItepator != NULL)
     {
@@ -155,17 +153,17 @@ void* myalloc(size_t size)
             cutTheBlockToFit(blockItepator, size);
             return (void*)((byte*)(blockItepator) + sizeof(BlockHeader));
         }
-        blockItepator = getNextBlock(blockItepator);
+        blockItepator = getNextBlock(blockItepator, heap);
     }
     return NULL;
 }
 
 // Free function
-void myfree(void* p)
+void BTFree(void* p, BTagsHeap* heap)
 {
     BlockHeader* header = (BlockHeader*)((byte*)(p) - sizeof(BlockHeader));
     header->m_isFree = true;
     BlockFooter* footer = (BlockFooter*)((byte*)(p) + header->m_blockSize);
     footer->m_isFree = true;
-    defragmentationAlgorithm(header);
+    defragmentationAlgorithm(header, heap);
 }

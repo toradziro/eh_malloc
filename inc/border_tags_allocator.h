@@ -24,4 +24,6 @@ typedef struct SHeap
     int             m_freeSpace;
 } BTagsHeap;
 
-void setupBTagsAllocator(void *buf, size_t size);
+void setupBTagsAllocator(void *buf, size_t size, BTagsHeap* heap);
+void* BTAlloc(size_t size, BTagsHeap* heap);
+void BTFree(void* p, BTagsHeap* heap);
