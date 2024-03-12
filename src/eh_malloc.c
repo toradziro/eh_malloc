@@ -1,6 +1,7 @@
 #include <eh_malloc.h>
 #define _GNU_SOURCE
 #include <sys/mman.h>
+#undef _GNU_SOURCE
 
 typedef unsigned char byte;
 
@@ -21,6 +22,8 @@ static GlobalHeap* heapSingleton()
 void* eh_malloc(size_t size)
 {
     GlobalHeap* heap = heapSingleton();
+    pthread_mutex_lock(&heap->m_mutex);
+
     if(heap->m_onInit)
     {
         initHeap(heap);
@@ -41,12 +44,14 @@ void* eh_malloc(size_t size)
     {
         return allocInBT(size, heap);
     }
+    pthread_mutex_unlock(&heap->m_mutex);
     return NULL;
 }
 
 void eh_free(void* address)
 {
     GlobalHeap* heap = heapSingleton();
+    pthread_mutex_lock(&heap->m_mutex);
 
     if(hasAddressInCache(address, &heap->m_cacheSmall))
     {
@@ -64,6 +69,7 @@ void eh_free(void* address)
     {
         freeInBT(address, heap);
     }
+    pthread_mutex_unlock(&heap->m_mutex);
 }
 
 static void initHeap(GlobalHeap* heap)
@@ -73,6 +79,7 @@ static void initHeap(GlobalHeap* heap)
     cacheSetup(&heap->m_cacheBig, bigSlabSize);
     heap->m_btHeaps = NULL;
     heap->m_onInit = false;
+    pthread_mutex_init(&heap->m_mutex, NULL);
 }
 
 static void* allocInBT(size_t size, GlobalHeap* heap)

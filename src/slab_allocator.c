@@ -1,7 +1,7 @@
 #include <slab_allocator.h>
-#include <stdbool.h>
 #define _GNU_SOURCE
 #include <sys/mman.h>
+#undef _GNU_SOURCE
 
 typedef unsigned char byte;
 

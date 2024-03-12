@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -std=c99
+CFLAGS = -Wall -Wextra -Werror -std=gnu11
 DFLAGS = -g -fsanitize=address -fsanitize=undefined
 RFLAGS = -O3
 DEPFLAGS = -MMD -MP

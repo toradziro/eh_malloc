@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <border_tags_allocator.h>
 #include <slab_allocator.h>
+#include <pthread.h>
 
 #define trace cout << "Line: " << __LINE__ << endl;
 
@@ -24,6 +25,7 @@ typedef struct SGlobalHeap
     BTagHeapsList*  m_btHeaps;
 
     bool            m_onInit;
+    pthread_mutex_t m_mutex;
 } GlobalHeap;
 
 void* eh_malloc(size_t size);
