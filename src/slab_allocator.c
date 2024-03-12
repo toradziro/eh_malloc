@@ -72,7 +72,7 @@ void cacheFree(Cache* cache, void *ptr)
         currentSlab->m_state = SS_PartlyFull;
         moveSlab(cache, currentSlab, SS_PartlyFull, SS_Full);
     }
-    if(currentSlab->m_freeBlocksCount == cache->m_slabObjects)
+    if((size_t)currentSlab->m_freeBlocksCount == cache->m_slabObjects)
     {
         currentSlab->m_state = SS_Free;
         moveSlab(cache, currentSlab, SS_Free, SS_PartlyFull);
@@ -80,7 +80,7 @@ void cacheFree(Cache* cache, void *ptr)
     //-- If we collected more than one free slab - automatically clean to avoid too much memory wasting
     if(countSlabs(cache, SS_Free) > 1)
     {
-        cache_shrink(cache);
+        cacheShrink(cache);
     }
 }
 
@@ -102,7 +102,7 @@ bool hasAddressInSlab(void* address, CSlabData* iterator, int slabSize)
 {
     while(iterator->m_next != NULL)
     {
-        if(iterator <= address || (byte*)(iterator) + slabSize >= address)
+        if((void*)(iterator) <= address || (void*)((byte*)(iterator) + slabSize) >= address)
         {
             return true;
         }
