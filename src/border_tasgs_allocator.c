@@ -138,7 +138,7 @@ void defragmentationAlgorithm(BlockHeader* iterator, BTagsHeap* heap)
 // Allocation function
 void* BTAlloc(size_t size, BTagsHeap* heap)
 {
-    if(heap->m_freeSpace < size)
+    if((size_t)(heap->m_freeSpace) < size)
     {
         return NULL;
     }
@@ -147,7 +147,7 @@ void* BTAlloc(size_t size, BTagsHeap* heap)
 
     while(blockItepator != NULL)
     {
-        if(blockItepator->m_isFree && blockItepator->m_blockSize >= size)
+        if(blockItepator->m_isFree && (size_t)(blockItepator->m_blockSize) >= size)
         {
             // prepare block for allocation, at least we have to mark it as used
             cutTheBlockToFit(blockItepator, size);

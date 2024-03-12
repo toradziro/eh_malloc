@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -std=gnu11
+CFLAGS = -Wall -Wextra -Werror -pthread -std=gnu11
 DFLAGS = -g -fsanitize=address -fsanitize=undefined
 RFLAGS = -O3
 DEPFLAGS = -MMD -MP
@@ -7,13 +7,18 @@ INC_DIR = ./inc
 BUILD_DIR = ./build
 SRC_DIR = src
 CFLAGS += -I$(INC_DIR)
-SRC = eh_malloc.c
+SRC =	eh_malloc.c \
+		slab_allocator.c \
+		border_tasgs_allocator.c \
+
 SRC := $(addprefix $(SRC_DIR)/,$(SRC))
 OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 DEP = $(OBJ:%.o=%.d)
 LIBNAME = eh_malloc.so
 TARGET_LIB = $(BUILD_DIR)/$(LIBNAME)
 BUILD_MODE ?= Release
+TEST_DIR = ./test
+BIN_DIR = ./bin
 
 ifeq ($(BUILD_MODE),Debug)
     CFLAGS += $(DFLAGS)
@@ -22,6 +27,15 @@ else ifeq ($(BUILD_MODE),Release)
 endif
 
 all: $(BUILD_DIR) $(TARGET_LIB)
+
+$(TEST_DIR)/list_test.o: $(TEST_DIR)/list_test.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+list_test: $(TEST_DIR)/list_test.o $(OBJ)
+	$(CC) -o $(BIN_DIR)/$@ $^ $(CFLAGS)
+
+run_list_test: list_test
+	$(BIN_DIR)/list_test
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -34,11 +48,11 @@ $(TARGET_LIB): $(OBJ)
 -include $(DEP)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@) # Создание директории для объектного файла, если она еще не существует
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -fPIC -c $< -o $@
 
 clean:
-	rm -rf $(BUILD_DIR) $(LIBNAME)
+	rm -rf $(BUILD_DIR) $(LIBNAME) $(TEST_DIR)/*.o $(BIN_DIR)/list_test
 
 fclean: clean
 
