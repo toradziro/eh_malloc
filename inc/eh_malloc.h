@@ -5,7 +5,7 @@
 #include <slab_allocator.h>
 #include <pthread.h>
 
-#define trace cout << "Line: " << __LINE__ << endl;
+#define trace printf("File: %s --- Function: %s --- Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 typedef struct SBTagHeapsList
 {
