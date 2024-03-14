@@ -20,7 +20,10 @@ ListNode* createNode(int data) {
 
 void deleteNode(ListNode* node) {
     if (node != NULL) {
+        trace
+        printf("node->data: %d\n", node->data);
         eh_free(node);
+        trace
     }
 }
 
@@ -69,7 +72,9 @@ int main() {
 
     printf("Data integrity check passed: all node values are correct.\n");
 
+    trace
     deleteList(&head);
+    trace
 
     printf("List has been created, filled, verified, and deleted successfully using custom allocator.\n");
 

@@ -8,7 +8,7 @@ const size_t headerSize = sizeof(BlockHeader);
 const size_t footerSize = sizeof(BlockFooter);
 const int minBlockSize = sizeof(char) + headerFooterSize;
 
-inline int64_t getAvailableSpaceWithoutMarkers(size_t size)
+int64_t getAvailableSpaceWithoutMarkers(size_t size)
 {
     return size - headerFooterSize;
 }
@@ -31,32 +31,32 @@ void initHeap(void *buf, size_t size, BTagsHeap* heap)
     heap->m_lastFooter->m_isFree = true;
 }
 
-inline void* blockHeaderShift(void* start)
+void* blockHeaderShift(void* start)
 {
     return (byte*)(start) + sizeof(BlockHeader);
 }
 
-inline void* blockFooterShift(void* start)
+void* blockFooterShift(void* start)
 {
     return (byte*)(start) + sizeof(BlockFooter);
 }
 
-inline size_t transformToSizeWithTags(size_t size)
+size_t transformToSizeWithTags(size_t size)
 {
     return size + sizeof(BlockFooter) + sizeof(BlockHeader);
 }
 
-inline BlockHeader* getHeader(BlockFooter* footer)
+BlockHeader* getHeader(BlockFooter* footer)
 {
     return (BlockHeader*)((byte*)(footer) - (footer->m_blockSize + headerSize));
 }
 
-inline BlockFooter* getFooter(BlockHeader* header)
+BlockFooter* getFooter(BlockHeader* header)
 {
     return (BlockFooter*)((byte*)(header) + (header->m_blockSize + headerSize));
 }
 
-inline BlockHeader* getNextBlock(BlockHeader* header, BTagsHeap* heap)
+BlockHeader* getNextBlock(BlockHeader* header, BTagsHeap* heap)
 {
     if(getFooter(header) == heap->m_lastFooter)
     {

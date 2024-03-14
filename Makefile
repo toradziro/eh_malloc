@@ -1,7 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -pthread -std=gnu11
 DFLAGS = -g -fsanitize=address -fsanitize=undefined
-RFLAGS = -O3
 DEPFLAGS = -MMD -MP
 INC_DIR = ./inc
 BUILD_DIR = ./build
@@ -19,11 +18,11 @@ TARGET_LIB = $(BUILD_DIR)/$(LIBNAME)
 BUILD_MODE ?= Release
 TEST_DIR = ./test
 BIN_DIR = ./bin
+LDFLAGS = -leh_malloc
+LDFLAGS += -L./
 
 ifeq ($(BUILD_MODE),Debug)
     CFLAGS += $(DFLAGS)
-else ifeq ($(BUILD_MODE),Release)
-    CFLAGS += $(RFLAGS)
 endif
 
 all: $(BUILD_DIR) $(TARGET_LIB)
@@ -31,8 +30,8 @@ all: $(BUILD_DIR) $(TARGET_LIB)
 $(TEST_DIR)/list_test.o: $(TEST_DIR)/list_test.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-list_test: $(TEST_DIR)/list_test.o $(OBJ)
-	$(CC) -o $(BIN_DIR)/$@ $^ $(CFLAGS)
+list_test: $(TEST_DIR)/list_test.o $(TARGET_LIB)
+	$(CC) -o $(BIN_DIR)/$@ $^ $(CFLAGS) $(LDFLAGS)
 
 run_list_test: list_test
 	$(BIN_DIR)/list_test

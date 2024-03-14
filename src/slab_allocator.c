@@ -2,6 +2,9 @@
 #define _GNU_SOURCE
 #include <sys/mman.h>
 #undef _GNU_SOURCE
+#include <stdio.h>
+
+#define trace printf("File: %s --- Function: %s --- Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 typedef unsigned char byte;
 
@@ -10,8 +13,8 @@ const int maxPossibleOrder = 10;
 const int minObjectCount = 100;
 
 //-- FD for funcs used by cache API
-inline int countFullSlabMinimumSize(int sizeObject);
-inline int countPossibleCountOfObjectsInSlab(int orderToPageSize, int objectSize);
+int countFullSlabMinimumSize(int sizeObject);
+int countPossibleCountOfObjectsInSlab(int orderToPageSize, int objectSize);
 static void* getFreeBlockFromFreeSlab(Cache *cache);
 static void* getFreeBlockFromPartlyFullSlab(Cache *cache);
 static void initNewFreeSlab(Cache* cache);
@@ -65,22 +68,43 @@ void* cacheAlloc(Cache* cache)
 //-- Returns memory back in cache
 void cacheFree(Cache* cache, void *ptr)
 {
+    trace
     CSlabData* currentSlab = (CSlabData*)((size_t)ptr & ~((1UL << cache->m_slabOrder) * sizeOfPage - 1));
+    if(currentSlab == NULL)
+    {
+        printf("NULL\n");
+    }
+    else
+    {
+        printf("%p\n", ptr);
+    }
+    trace
     ++currentSlab->m_freeBlocksCount;
+    trace
     if(currentSlab->m_freeBlocksCount == 1)
     {
+        trace
         currentSlab->m_state = SS_PartlyFull;
+        trace
         moveSlab(cache, currentSlab, SS_PartlyFull, SS_Full);
+        trace
     }
+    trace
     if((size_t)currentSlab->m_freeBlocksCount == cache->m_slabObjects)
     {
+        trace
         currentSlab->m_state = SS_Free;
+        trace
         moveSlab(cache, currentSlab, SS_Free, SS_PartlyFull);
+        trace
     }
+    trace
     //-- If we collected more than one free slab - automatically clean to avoid too much memory wasting
     if(countSlabs(cache, SS_Free) > 1)
     {
+        trace
         cacheShrink(cache);
+        trace
     }
 }
 
@@ -136,17 +160,17 @@ void safe_memset(void* data, int c, size_t size)
     }
 }
 
-inline void oneByteShift(size_t* order)
+void oneByteShift(size_t* order)
 {
     *order = *order << 1;
 }
 
-inline int countFullSlabMinimumSize(int sizeObject)
+int countFullSlabMinimumSize(int sizeObject)
 {
     return (minObjectCount * (sizeObject)) + sizeof(CSlabData);
 }
 
-inline int countPossibleCountOfObjectsInSlab(int orderToPageSize, int objectSize)
+int countPossibleCountOfObjectsInSlab(int orderToPageSize, int objectSize)
 {
     return (orderToPageSize - sizeof(CSlabData)) / (objectSize);
 }
@@ -154,13 +178,14 @@ inline int countPossibleCountOfObjectsInSlab(int orderToPageSize, int objectSize
 //-- Allocation and deallocation functions
 static void* allocSlab(int order)
 {
-    return mmap(NULL, ((2 << order) * sizeOfPage), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    size_t slabSize = (size_t)(1UL << order) * sizeOfPage;
+    return mmap(NULL, slabSize, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 }
 
 static void freeSlab(void* slab, int order)
 {
     //-- TODO: Chack ret val
-    munmap(slab, ((2 << order) * sizeOfPage));
+    munmap(slab, ((1UL << order) * sizeOfPage));
 }
 
 //-- Inside cache utilites
