@@ -19,11 +19,9 @@ ListNode* createNode(int data) {
 }
 
 void deleteNode(ListNode* node) {
-    if (node != NULL) {
-        trace
-        printf("node->data: %d\n", node->data);
+    if (node != NULL)
+    {
         eh_free(node);
-        trace
     }
 }
 
@@ -41,6 +39,7 @@ void appendNode(ListNode** head, int data) {
     }
 }
 
+#define trace printf("File: %s --- Function: %s --- Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
 void deleteList(ListNode** head) {
     ListNode* current = *head;
     while (current != NULL) {
@@ -57,7 +56,6 @@ int main() {
     for (int i = 0; i < 1000; i++) {
         appendNode(&head, i);
     }
-
     ListNode* current = head;
     int expectedValue = 0;
     while (current != NULL) {
@@ -72,9 +70,8 @@ int main() {
 
     printf("Data integrity check passed: all node values are correct.\n");
 
-    trace
+    
     deleteList(&head);
-    trace
 
     printf("List has been created, filled, verified, and deleted successfully using custom allocator.\n");
 

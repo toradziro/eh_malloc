@@ -4,8 +4,6 @@
 #undef _GNU_SOURCE
 #include <stdio.h>
 
-#define trace printf("File: %s --- Function: %s --- Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
-
 typedef unsigned char byte;
 
 const int sizeOfPage = 4096;
@@ -21,6 +19,9 @@ static void initNewFreeSlab(Cache* cache);
 static void moveSlab(Cache* cache, CSlabData* pos, SlabState whereToMove, SlabState fromMoved);
 static void letTheSlabGo(Cache* cache, SlabState stateToFree);
 static int countSlabs(Cache* cache, SlabState stateToCount);
+static CSlabData* getIteratorByAddress(void* address, Cache* cache);
+
+#define trace printf("File: %s --- Function: %s --- Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
 
 //-- Cache API goes here
 //-- Set up cache for forward usages
@@ -68,43 +69,26 @@ void* cacheAlloc(Cache* cache)
 //-- Returns memory back in cache
 void cacheFree(Cache* cache, void *ptr)
 {
-    trace
-    CSlabData* currentSlab = (CSlabData*)((size_t)ptr & ~((1UL << cache->m_slabOrder) * sizeOfPage - 1));
-    if(currentSlab == NULL)
+    CSlabData* slab = getIteratorByAddress(ptr, cache);
+
+    ++slab->m_freeBlocksCount;
+
+    if(slab->m_freeBlocksCount == 1)
     {
-        printf("NULL\n");
+        slab->m_state = SS_PartlyFull;
+        moveSlab(cache, slab, SS_PartlyFull, SS_Full);
     }
-    else
+    
+    if((size_t)slab->m_freeBlocksCount == cache->m_slabObjects)
     {
-        printf("%p\n", ptr);
+        slab->m_state = SS_Free;
+        moveSlab(cache, slab, SS_Free, SS_PartlyFull);
     }
-    trace
-    ++currentSlab->m_freeBlocksCount;
-    trace
-    if(currentSlab->m_freeBlocksCount == 1)
-    {
-        trace
-        currentSlab->m_state = SS_PartlyFull;
-        trace
-        moveSlab(cache, currentSlab, SS_PartlyFull, SS_Full);
-        trace
-    }
-    trace
-    if((size_t)currentSlab->m_freeBlocksCount == cache->m_slabObjects)
-    {
-        trace
-        currentSlab->m_state = SS_Free;
-        trace
-        moveSlab(cache, currentSlab, SS_Free, SS_PartlyFull);
-        trace
-    }
-    trace
+    
     //-- If we collected more than one free slab - automatically clean to avoid too much memory wasting
     if(countSlabs(cache, SS_Free) > 1)
     {
-        trace
         cacheShrink(cache);
-        trace
     }
 }
 
@@ -124,9 +108,13 @@ void cacheShrink(Cache* cache)
 
 bool hasAddressInSlab(void* address, CSlabData* iterator, int slabSize)
 {
-    while(iterator->m_next != NULL)
+    if(iterator == NULL)
     {
-        if((void*)(iterator) <= address || (void*)((byte*)(iterator) + slabSize) >= address)
+        return false;
+    }
+    while(iterator != NULL)
+    {
+        if((void*)(iterator) <= address && (void*)((byte*)(iterator) + slabSize) >= address)
         {
             return true;
         }
@@ -148,6 +136,29 @@ bool hasAddressInCache(void* address, Cache* cache)
         return true;
     }
     return false;
+}
+
+static CSlabData* getIteratorByAddress(void* address, Cache* cache)
+{
+    CSlabData* iterator = cache->m_fullSlabs;
+    while(iterator != NULL)
+    {
+        if((void*)(iterator) <= address && (void*)((byte*)(iterator) + cache->m_slabSize) >= address)
+        {
+            return iterator;
+        }
+        iterator = iterator->m_next;
+    }
+    iterator = cache->m_partlyFullSlabs;
+    while (iterator != NULL)
+    {
+        if((void*)(iterator) <= address && (void*)((byte*)(iterator) + cache->m_slabSize) >= address)
+        {
+            return iterator;
+        }
+        iterator = iterator->m_next;
+    }
+    return NULL;
 }
 
 //-- Utilites and conf data
@@ -185,7 +196,8 @@ static void* allocSlab(int order)
 static void freeSlab(void* slab, int order)
 {
     //-- TODO: Chack ret val
-    munmap(slab, ((1UL << order) * sizeOfPage));
+    size_t slabSize = (size_t)(1UL << order) * sizeOfPage;
+    munmap(slab, slabSize);
 }
 
 //-- Inside cache utilites

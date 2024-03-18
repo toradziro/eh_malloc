@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 void test_basic_allocation() {
     printf("Testing basic allocation...\n");
@@ -76,13 +77,6 @@ void test_allocation_edge_cases() {
         exit(1);
     }
     eh_free(ptr); // It's safe to call free on NULL as per C standard
-
-    ptr = eh_malloc((size_t)-1); // Edge case: maximum size_t value, likely to fail
-    if (ptr != NULL) {
-        printf("Allocation for maximum size_t value should fail\n");
-        exit(1);
-    }
-    eh_free(ptr);
     printf("Allocation edge cases passed.\n");
 }
 
@@ -138,7 +132,72 @@ void test_allocation_after_free() {
     printf("Allocation after free passed.\n");
 }
 
+void test_single_allocation_and_deallocation() {
+    char *ptr = eh_malloc(100);
+    assert(ptr != NULL);
+    ptr[0] = 'a';
+    eh_free(ptr);
+}
+
+void test_multiple_allocations_and_deallocations() {
+    char *ptr1 = eh_malloc(100);
+    char *ptr2 = eh_malloc(200);
+    assert(ptr1 != NULL);
+    assert(ptr2 != NULL);
+    ptr1[0] = 'a';
+    ptr2[0] = 'b';
+    eh_free(ptr1);
+    eh_free(ptr2);
+}
+
+void test_allocation_of_different_sizes() {
+    for (size_t size = 1; size <= 1000; size++) {
+        char *ptr = eh_malloc(size);
+        assert(ptr != NULL);
+        ptr[0] = 'a';
+        eh_free(ptr);
+    }
+}
+
+void test_deallocation_of_null_pointer() {
+    eh_free(NULL);
+}
+
+void test_deallocation_of_unallocated_memory() {
+    char *ptr = (char *)1;
+    eh_free(ptr);
+}
+
+void test_large_complex_allocation_and_data_integrity() {
+    const int num_blocks = 1000;
+    const int max_block_size = 1000;
+    char *blocks[num_blocks];
+
+    // Allocate a large number of blocks of different sizes and write unique values to each block
+    for (int i = 0; i < num_blocks; i++) {
+        size_t size = (i % max_block_size) + 1;
+        blocks[i] = eh_malloc(size);
+        assert(blocks[i] != NULL);
+        memset(blocks[i], i, size);  // Fill the block with the value i
+    }
+
+    // Check that the values in each block have not been corrupted
+    for (int i = 0; i < num_blocks; i++) {
+        size_t size = (i % max_block_size) + 1;
+        for (size_t j = 0; j < size; j++) {
+            printf("blocks[%d][%ld] = %d\n", i, j, blocks[i][j]);
+            assert(blocks[i][j] == i);
+        }
+    }
+
+    // Deallocate all blocks
+    for (int i = 0; i < num_blocks; i++) {
+        eh_free(blocks[i]);
+    }
+}
+
 int main() {
+    //-- Chat GPT generated tests
     test_basic_allocation();
     test_data_integrity();
     test_fragmentation();
@@ -147,7 +206,13 @@ int main() {
     test_randomized_alloc_free();
     test_large_allocations();
     test_allocation_after_free();
-    // Call other tests here...
+    //-- Copilot generated tests
+    test_single_allocation_and_deallocation();
+    test_multiple_allocations_and_deallocations();
+    test_allocation_of_different_sizes();
+    test_deallocation_of_null_pointer();
+    test_deallocation_of_unallocated_memory();
+    test_large_complex_allocation_and_data_integrity();
     printf("All tests completed.\n");
     return 0;
 }

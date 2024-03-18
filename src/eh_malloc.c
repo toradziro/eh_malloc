@@ -21,18 +21,15 @@ static GlobalHeap* heapSingleton()
     return &heap;
 }
 
-size_t align(size_t n, size_t round_up_to)
-{
-	return (n + round_up_to - 1) & ~(round_up_to - 1);
-}
-
 void* eh_malloc(size_t size)
 {
+    if(size == 0)
+    {
+        return NULL;
+    }
     GlobalHeap* heap = heapSingleton();
     pthread_mutex_lock(&heap->m_mutex);
     void* result = NULL;
-
-    size = align(size, sizeof(intptr_t));
 
     if(heap->m_onInit)
     {
@@ -64,35 +61,23 @@ void eh_free(void* address)
     {
         return;
     }
-    trace
     GlobalHeap* heap = heapSingleton();
-    trace
     pthread_mutex_lock(&heap->m_mutex);
-    trace
-
     if(hasAddressInCache(address, &heap->m_cacheSmall))
     {
-        trace
         cacheFree(&heap->m_cacheSmall, address);
-        trace
     }
     else if(hasAddressInCache(address, &heap->m_cacheMedium))
     {
-        trace
         cacheFree(&heap->m_cacheMedium, address);
-        trace
     }
     else if(hasAddressInCache(address, &heap->m_cacheBig))
     {
-        trace
         cacheFree(&heap->m_cacheBig, address);
-        trace
     }
     else
     {
-        trace
         freeInBT(address, heap);
-        trace
     }
     pthread_mutex_unlock(&heap->m_mutex);
 }
