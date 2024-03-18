@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -pthread -std=gnu11
-DFLAGS = -g -fsanitize=address -fsanitize=undefined
+CFLAGS = -Wall -Wextra -Werror -pthread -std=gnu11 -Wno-deprecated-declarations -Wno-unused-parameter -Wno-unused-variable -O2 -msse4.2
+DFLAGS = -g -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer
 DEPFLAGS = -MMD -MP
 INC_DIR = ./inc
 BUILD_DIR = ./build
@@ -18,15 +18,19 @@ TARGET_LIB = $(BUILD_DIR)/$(LIBNAME)
 BUILD_MODE ?= Release
 TEST_DIR = ./test
 BIN_DIR = ./bin
-LDFLAGS = -leh_malloc
-LDFLAGS += -L./
+LDFLAGS = ./build/eh_malloc.so
+LDFLAGS += -L./build
+LD_PRELOAD =
 
 ifeq ($(BUILD_MODE),Debug)
     CFLAGS += $(DFLAGS)
+	LDFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined
+	LD_PRELOAD += /usr/lib/x86_64-linux-gnu/libasan.so.6.0.0
 endif
 
 all: $(BUILD_DIR) $(TARGET_LIB)
 
+# Test with list data structure
 $(TEST_DIR)/list_test.o: $(TEST_DIR)/list_test.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
@@ -34,7 +38,17 @@ list_test: $(TEST_DIR)/list_test.o $(TARGET_LIB)
 	$(CC) -o $(BIN_DIR)/$@ $^ $(CFLAGS) $(LDFLAGS)
 
 run_list_test: list_test
-	$(BIN_DIR)/list_test
+	LD_PRELOAD=$(LD_PRELOAD) $(BIN_DIR)/list_test
+
+# Common test
+$(TEST_DIR)/test.o: $(TEST_DIR)/test.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+test: $(TEST_DIR)/test.o $(TARGET_LIB)
+	$(CC) -o $(BIN_DIR)/$@ $^ $(CFLAGS) $(LDFLAGS)
+
+run_test: test
+	LD_PRELOAD=$(LD_PRELOAD) $(BIN_DIR)/test
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
