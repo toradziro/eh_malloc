@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef enum ESlabState
 {
@@ -12,23 +12,23 @@ typedef enum ESlabState
 
 typedef struct SCSlabData
 {
-    struct SCSlabData*  m_next;
-    struct SCSlabData*  m_prev;
-    SlabState           m_state;
-    int                 m_freeBlocksCount;
+    struct SCSlabData* m_next;
+    struct SCSlabData* m_prev;
+    SlabState          m_state;
+    int                m_freeBlocksCount;
 } CSlabData;
 
 // Contains all data about current cache
 typedef struct SCache
 {
-    CSlabData*  m_freeSlabs;
-    CSlabData*  m_fullSlabs;
-    CSlabData*  m_partlyFullSlabs;
+    CSlabData* m_freeSlabs;
+    CSlabData* m_fullSlabs;
+    CSlabData* m_partlyFullSlabs;
 
-    size_t      m_objectSize;  /* allocating object size */
-    size_t      m_slabObjects; /* count of objects in one SLAB */ 
-    int         m_slabOrder;   /* slab order size (i.e. (2^order * 4096)) SLAB */
-    int         m_slabSize;     /* slab size after applying the formula above */
+    size_t m_objectSize;  /* allocating object size */
+    size_t m_slabObjects; /* count of objects in one SLAB */
+    int    m_slabOrder;   /* slab order size (i.e. (2^order * 4096)) SLAB */
+    int    m_slabSize;    /* slab size after applying the formula above */
 } Cache;
 
 // Set up cache for forward usages
