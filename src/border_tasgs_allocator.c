@@ -6,14 +6,14 @@ typedef unsigned char byte;
 const size_t headerFooterSize = sizeof(BlockFooter) + sizeof(BlockHeader);
 const size_t headerSize = sizeof(BlockHeader);
 const size_t footerSize = sizeof(BlockFooter);
-const int minBlockSize = sizeof(char) + headerFooterSize;
+const int    minBlockSize = sizeof(char) + headerFooterSize;
 
 int64_t getAvailableSpaceWithoutMarkers(size_t size)
 {
     return size - headerFooterSize;
 }
 
-void initHeap(void *buf, size_t size, BTagsHeap* heap)
+void initHeap(void* buf, size_t size, BTagsHeap* heap)
 {
     heap->m_buffer = buf;
     heap->m_bufferSize = size;
@@ -24,7 +24,7 @@ void initHeap(void *buf, size_t size, BTagsHeap* heap)
     heap->m_firstBlock = (BlockHeader*)heap->m_buffer;
     heap->m_firstBlock->m_blockSize = heap->m_freeSpace;
     heap->m_firstBlock->m_isFree = true;
-        
+
     // here goes footer
     heap->m_lastFooter = (BlockFooter*)((byte*)(heap->m_buffer) + (size - sizeof(BlockFooter)));
     heap->m_lastFooter->m_blockSize = heap->m_freeSpace;
@@ -58,14 +58,14 @@ BlockFooter* getFooter(BlockHeader* header)
 
 BlockHeader* getNextBlock(BlockHeader* header, BTagsHeap* heap)
 {
-    if(getFooter(header) == heap->m_lastFooter)
+    if (getFooter(header) == heap->m_lastFooter)
     {
         return NULL;
     }
     return (BlockHeader*)((byte*)(getFooter(header)) + footerSize);
 }
 
-void setupBTagsAllocator(void *buf, size_t size, BTagsHeap* heap)
+void setupBTagsAllocator(void* buf, size_t size, BTagsHeap* heap)
 {
     initHeap(buf, size, heap);
 }
@@ -75,8 +75,9 @@ void setupBTagsAllocator(void *buf, size_t size, BTagsHeap* heap)
 void cutTheBlockToFit(BlockHeader* iterator, size_t requestedSize)
 {
     size_t sizeToCut = requestedSize + headerFooterSize;
-    // in case of new block is gonna be smaller, than size of (metdata + one_void_pointer_size) size we won't cut
-    if((int64_t)(iterator->m_blockSize - sizeToCut) <= minBlockSize)
+    // in case of new block is gonna be smaller, than size of (metdata + one_void_pointer_size) size
+    // we won't cut
+    if ((int64_t)(iterator->m_blockSize - sizeToCut) <= minBlockSize)
     {
         iterator->m_isFree = false;
         getFooter(iterator)->m_isFree = false;
@@ -107,10 +108,10 @@ void defragmentationAlgorithm(BlockHeader* iterator, BTagsHeap* heap)
 {
     // join all previous blocks
     BlockFooter* currFooter = getFooter(iterator);
-    while(iterator != heap->m_firstBlock)
+    while (iterator != heap->m_firstBlock)
     {
         BlockFooter* prevFooter = (BlockFooter*)((byte*)iterator - headerSize);
-        if(!prevFooter->m_isFree)
+        if (!prevFooter->m_isFree)
         {
             break;
         }
@@ -121,10 +122,10 @@ void defragmentationAlgorithm(BlockHeader* iterator, BTagsHeap* heap)
     }
 
     // join all ahead blocks
-    while(currFooter != heap->m_lastFooter)
+    while (currFooter != heap->m_lastFooter)
     {
         BlockHeader* nextHeader = (BlockHeader*)((byte*)currFooter + footerSize);
-        if(!nextHeader->m_isFree)
+        if (!nextHeader->m_isFree)
         {
             break;
         }
@@ -138,16 +139,16 @@ void defragmentationAlgorithm(BlockHeader* iterator, BTagsHeap* heap)
 // Allocation function
 void* BTAlloc(size_t size, BTagsHeap* heap)
 {
-    if((size_t)(heap->m_freeSpace) < size)
+    if ((size_t)(heap->m_freeSpace) < size)
     {
         return NULL;
     }
-    
+
     BlockHeader* blockItepator = heap->m_firstBlock;
 
-    while(blockItepator != NULL)
+    while (blockItepator != NULL)
     {
-        if(blockItepator->m_isFree && (size_t)(blockItepator->m_blockSize) >= size)
+        if (blockItepator->m_isFree && (size_t)(blockItepator->m_blockSize) >= size)
         {
             // prepare block for allocation, at least we have to mark it as used
             cutTheBlockToFit(blockItepator, size);

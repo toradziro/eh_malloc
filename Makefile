@@ -17,6 +17,7 @@ LIBNAME = eh_malloc.so
 TARGET_LIB = $(BUILD_DIR)/$(LIBNAME)
 BUILD_MODE ?= Release
 TEST_DIR = ./test
+TEST_OBJ = $(TEST_DIR)/test.o
 BIN_DIR = ./bin
 LDFLAGS = ./build/eh_malloc.so
 LDFLAGS += -L./build
@@ -34,25 +35,27 @@ all: $(BUILD_DIR) $(TARGET_LIB)
 $(TEST_DIR)/list_test.o: $(TEST_DIR)/list_test.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-list_test: $(TEST_DIR)/list_test.o $(TARGET_LIB)
-	$(CC) -o $(BIN_DIR)/$@ $^ $(CFLAGS) $(LDFLAGS)
+list_test: all $(BIN_DIR) $(TEST_DIR)/list_test.o $(TARGET_LIB)
+	gcc -o $(BIN_DIR)/list_test $(TEST_DIR)/list_test.o $(TARGET_LIB) $(LDFLAGS)
 
 run_list_test: list_test
 	LD_PRELOAD=$(LD_PRELOAD) $(BIN_DIR)/list_test
 
 # Common test
-$(TEST_DIR)/test.o: $(TEST_DIR)/test.c $(DEPS)
+$(TEST_OBJ): $(TEST_DIR)/test.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-test: $(TEST_DIR)/test.o $(TARGET_LIB)
-	$(CC) -o $(BIN_DIR)/$@ $^ $(CFLAGS) $(LDFLAGS)
+test: all $(TEST_OBJ) $(TARGET_LIB) $(BIN_DIR)
+	gcc -o $(BIN_DIR)/test $(TEST_OBJ) $(TARGET_LIB) $(LDFLAGS)
 
 run_test: test
 	LD_PRELOAD=$(LD_PRELOAD) $(BIN_DIR)/test
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
-	mkdir -p $(dir $(OBJ))
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
 $(TARGET_LIB): $(OBJ)
 	$(CC) $(CFLAGS) -shared -o $@ $^
@@ -65,7 +68,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(DEPFLAGS) -fPIC -c $< -o $@
 
 clean:
-	rm -rf $(BUILD_DIR) $(LIBNAME) $(TEST_DIR)/*.o $(BIN_DIR)/list_test
+	rm -rf $(BUILD_DIR) $(LIBNAME) $(TEST_DIR)/*.o $(BIN_DIR)
 
 fclean: clean
 
