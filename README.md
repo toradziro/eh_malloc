@@ -35,4 +35,13 @@ BUILD_MODE=Debug make run_list_test
 BUILD_MODE=Debug make run_test
 ```
 
+## Time measure
+To compare speed with system malloc I created an integer array with 5000 elements, each element is a pointer to memory sized as its index, so in 1t element is only 4 bytes allocated and in 5000th element is 20kb is allocated
+Speed compare result:
+```sh
+eh_malloc took '6.083000' milliseconds to execute 
+system malloc took '4.211000' milliseconds to execute 
+```
+It's slower but not critical, for learning project result is acceptable
+
 (name of project is expanded to "ehillman alloc memory" since my school 42 nickname was ehillman)
