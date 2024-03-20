@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "eh_malloc.h"
 
 void test_basic_allocation()
@@ -233,6 +234,49 @@ void test_large_complex_allocation_and_data_integrity()
     }
 }
 
+void speed_compare()
+{
+    const int num_blocks = 5000;
+    const int max_block_size = 5000;
+    int*      blocks[num_blocks];
+    clock_t   start, end;
+    double    cpu_time_used;
+
+    {  //-- my allocator time check
+        start = clock();
+        for (int i = 0; i < num_blocks; i++)
+        {
+            size_t size = (i % max_block_size) + 1;
+            blocks[i] = eh_malloc(size * sizeof(int));
+            assert(blocks[i] != NULL);
+        }
+        for (int i = 0; i < num_blocks; i++)
+        {
+            eh_free(blocks[i]);
+        }
+        end = clock();
+        cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
+        printf("eh_malloc took '%f' milliseconds to execute \n", cpu_time_used);
+    }
+
+    {  //-- system allocator time check
+        start = clock();
+        for (int i = 0; i < num_blocks; i++)
+        {
+            size_t size = (i % max_block_size) + 1;
+            blocks[i] = malloc(size * sizeof(int));
+            assert(blocks[i] != NULL);
+        }
+        for (int i = 0; i < num_blocks; i++)
+        {
+            free(blocks[i]);
+        }
+        end = clock();
+        cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
+        printf("system malloc took '%f' milliseconds to execute \n", cpu_time_used);
+    }
+}
+
 int main()
 {
     //-- Chat GPT generated tests
@@ -251,6 +295,7 @@ int main()
     test_deallocation_of_null_pointer();
     test_deallocation_of_unallocated_memory();
     test_large_complex_allocation_and_data_integrity();
+    speed_compare();
     printf("All tests completed.\n");
     return 0;
 }
