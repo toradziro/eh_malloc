@@ -35,13 +35,19 @@ BUILD_MODE=Debug make run_list_test
 BUILD_MODE=Debug make run_test
 ```
 
-## Time measure
-To compare speed with system malloc I created an integer array with 5000 elements, each element is a pointer to memory sized as its index, so in 1t element is only 4 bytes allocated and in 5000th element is 20kb is allocated
-Speed compare result:
+## Time mesure
+To compare speed with system malloc I took two cases:
+1. Created an char array with 4096 elements, each element is a pointer to memory sized as its index, so it would fit in cache algorithm.
+2. Created an integer array with 5000 elements, each element is a pointer to memory sized as its index, so it's bigger than cache.
+Results:
 ```sh
-eh_malloc took '6.083000' milliseconds to execute 
-system malloc took '4.211000' milliseconds to execute 
+eh_malloc took '0.307000' milliseconds to execute with data from 1 bytes to 4096 bytes
+system malloc took '1.495000' milliseconds to execute with data from 1 bytes to 4096 bytes
+
+eh_malloc took '137.714000' milliseconds to execute with data from 4 bytes to 20000 bytes
+system malloc took '4.328000' milliseconds to execute with data from 4 bytes to 20000 bytes
 ```
-It's slower but not critical, for learning project result is acceptable
+
+As we can see allocator shows perfomance better than system's one while we stay in cache and show really bad perfomance on big allocations.
 
 (name of project is expanded to "ehillman alloc memory" since my school 42 nickname was ehillman)

@@ -86,8 +86,8 @@ void cacheFree(Cache* cache, void* ptr)
         moveSlab(cache, slab, SS_Free, SS_PartlyFull);
     }
 
-    //-- If we collected more than one free slab - automatically clean to avoid too much memory
-    // wasting
+    //-- If we collected more than one free slab - automatically clean
+    //-- to avoid too much memory wasting
     if (countSlabs(cache, SS_Free) > 1)
     {
         cacheShrink(cache);

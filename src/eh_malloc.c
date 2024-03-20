@@ -113,7 +113,7 @@ static void* allocInBT(size_t size, GlobalHeap* heap)
     BTagHeapsList* iterator = heap->m_btHeaps;
     if (iterator == NULL)
     {
-        iterator = newBTNode;
+        heap->m_btHeaps = newBTNode;
     }
     else
     {
@@ -139,20 +139,21 @@ static void freeInBT(void* address, GlobalHeap* heap)
     }
     size_t sizeForFree = iterator->m_heap.m_bufferSize + sizeof(BTagHeapsList) +
                          sizeof(BTagHeapsList*) + sizeof(BTagsHeap);
-    if (address >= (void*)(iterator) &&
-        address <= (void*)((byte*)(iterator) + iterator->m_heap.m_bufferSize))
-    {
-        heap->m_btHeaps = heap->m_btHeaps->m_next;
-        munmap((void*)(iterator), sizeForFree);
-    }
 
-    BTagHeapsList* prevElem = NULL;
+    BTagHeapsList* prevElem = iterator;
     while (iterator != NULL)
     {
         if (address >= (void*)(iterator) &&
             address <= (void*)((byte*)(iterator) + iterator->m_heap.m_bufferSize))
         {
-            prevElem->m_next = iterator->m_next;
+            if (iterator == heap->m_btHeaps)
+            {
+                heap->m_btHeaps = NULL;
+            }
+            else
+            {
+                prevElem->m_next = iterator->m_next;
+            }
             munmap((void*)(iterator), sizeForFree);
             break;
         }
