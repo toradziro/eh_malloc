@@ -298,6 +298,8 @@ void speed_compare()
                 blocks[i] = eh_malloc(size * sizeof(int));
                 assert(blocks[i] != NULL);
             }
+            // dumpHeap();
+
             for (int i = 0; i < num_blocks; i++)
             {
                 eh_free(blocks[i]);
@@ -352,5 +354,6 @@ int main()
     test_large_complex_allocation_and_data_integrity();
     speed_compare();
     printf("All tests completed.\n");
+    dumpHeap();
     return 0;
 }

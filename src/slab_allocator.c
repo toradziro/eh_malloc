@@ -6,7 +6,7 @@
 
 typedef unsigned char byte;
 
-const int sizeOfPage = 4096;
+const int _sizeOfPage = 4096;
 const int maxPossibleOrder = 10;
 const int minObjectCount = 100;
 
@@ -35,7 +35,7 @@ void cacheSetup(Cache* cache, size_t object_size)
     int minimumSlabSizeAcceptable = countFullSlabMinimumSize(object_size);
     for (int i = 0; i <= maxPossibleOrder; ++i)
     {
-        int currentOrderToPageSize = (1UL << i) * sizeOfPage;
+        int currentOrderToPageSize = (1UL << i) * _sizeOfPage;
         if ((minimumSlabSizeAcceptable <= currentOrderToPageSize) || i == maxPossibleOrder)
         {
             cache->m_slabOrder = i;
@@ -193,14 +193,14 @@ int countPossibleCountOfObjectsInSlab(int orderToPageSize, int objectSize)
 //-- Allocation and deallocation functions
 static void* allocSlab(int order)
 {
-    size_t slabSize = (size_t)(1UL << order) * sizeOfPage;
+    size_t slabSize = (size_t)(1UL << order) * _sizeOfPage;
     return mmap(NULL, slabSize, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 }
 
 static void freeSlab(void* slab, int order)
 {
     //-- TODO: Chack ret val
-    size_t slabSize = (size_t)(1UL << order) * sizeOfPage;
+    size_t slabSize = (size_t)(1UL << order) * _sizeOfPage;
     munmap(slab, slabSize);
 }
 

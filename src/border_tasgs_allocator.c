@@ -152,6 +152,7 @@ void* BTAlloc(size_t size, BTagsHeap* heap)
         {
             // prepare block for allocation, at least we have to mark it as used
             cutTheBlockToFit(blockItepator, size);
+            heap->m_freeSpace -= transformToSizeWithTags(size);
             return (void*)((byte*)(blockItepator) + sizeof(BlockHeader));
         }
         blockItepator = getNextBlock(blockItepator, heap);
@@ -166,5 +167,6 @@ void BTFree(void* p, BTagsHeap* heap)
     header->m_isFree = true;
     BlockFooter* footer = (BlockFooter*)((byte*)(p) + header->m_blockSize);
     footer->m_isFree = true;
+    heap->m_freeSpace += transformToSizeWithTags(header->m_blockSize);
     defragmentationAlgorithm(header, heap);
 }

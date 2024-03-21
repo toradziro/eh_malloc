@@ -41,13 +41,13 @@ To compare speed with system malloc I took two cases:
 2. Created an integer array with 5000 elements, each element is a pointer to memory sized as its index, so it's bigger than cache.
 Results:
 ```sh
-eh_malloc took '0.307000' milliseconds to execute with data from 1 bytes to 4096 bytes
-system malloc took '1.495000' milliseconds to execute with data from 1 bytes to 4096 bytes
+eh_malloc took '0.315000' milliseconds to execute with data from 1 bytes to 4096 bytes
+system malloc took '1.443000' milliseconds to execute with data from 1 bytes to 4096 bytes
 
-eh_malloc took '137.714000' milliseconds to execute with data from 4 bytes to 20000 bytes
-system malloc took '4.328000' milliseconds to execute with data from 4 bytes to 20000 bytes
+eh_malloc took '10.160000' milliseconds to execute with data from 4 bytes to 20000 bytes
+system malloc took '3.798000' milliseconds to execute with data from 4 bytes to 20000 bytes
 ```
 
-As we can see allocator shows perfomance better than system's one while we stay in cache and show really bad perfomance on big allocations.
+As we can see allocator shows perfomance better than system's one while we stay in cache and worse perfomance on big allocations.
 
 (name of project is expanded to "ehillman alloc memory" since my school 42 nickname was ehillman)

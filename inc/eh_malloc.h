@@ -30,3 +30,4 @@ typedef struct SGlobalHeap
 
 void* eh_malloc(size_t size);
 void  eh_free(void* address);
+void  dumpHeap();
